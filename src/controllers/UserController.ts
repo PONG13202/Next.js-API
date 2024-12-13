@@ -50,9 +50,10 @@ export const UserController = {
             const oldUser = await prisma.user.findUnique({
                 where: { id }
             })
+
             const newData = {
                 username: body.username,
-                password: body.password ?? oldUser?.password
+                password: body.password == '' ? oldUser?.password : body.password
             }
 
             await prisma.user.update({
@@ -71,7 +72,19 @@ export const UserController = {
                 select: {
                     id: true,
                     username: true,
-                    level: true
+                    level: true,
+                    section: {
+                        select: {
+                            name: true,
+                            id: true,
+                            department: {
+                                select: {
+                                    name: true,
+                                    id: true
+                                }
+                            }
+                        }
+                    }
                 },
                 where: {
                     status: "active"
@@ -91,6 +104,7 @@ export const UserController = {
             username: string;
             password: string;
             level: string;
+            sectionId: string;
         }
     }) => {
         try {
@@ -108,6 +122,7 @@ export const UserController = {
             username: string;
             password: string;
             level: string;
+            sectionId: number;
         },
         params: {
             id: string;
@@ -118,15 +133,39 @@ export const UserController = {
                 select: { password: true },
                 where: { id: parseInt(params.id) }
             })
+
             const newData = {
                 username: body.username,
-                password: body.password ?? oldUser?.password,
-                level: body.level
+                password: body.password == '' ? oldUser?.password : body.password,
+                level: body.level,
+                sectionId: body.sectionId
             }
+
             await prisma.user.update({
                 where: { id: parseInt(params.id) },
                 data: newData
             })
+
+            return { message: "success" }
+        } catch (error) {
+            return error;
+        }
+    },
+    remove: async ({ params }: {
+        params: {
+            id: string;
+        }
+    }) => {
+        try {
+            await prisma.user.update({
+                where: {
+                    id: parseInt(params.id)
+                },
+                data: {
+                    status: "inactive"
+                }
+            })
+
             return { message: "success" }
         } catch (error) {
             return error;
